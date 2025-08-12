@@ -8,7 +8,7 @@ const HeroSection: React.FC = () => {
           <h2 className="text-green-500 font-medium mb-4 text-lg">
             <span className="border-b-2 border-green-500">100%</span> Organic Fruits
           </h2>
-          <h1 className="text-5xl lg:text-7xl font-bold mb-6 leading-tight text-gray-900">
+          <h1 className="text-5xl lg:text-7xl font-bold mb-6 leading-tight text-blue-950">
             Explore fresh &<br />Sweet Cake.
           </h1>
           <p className="text-gray-600 mb-8 max-w-md">

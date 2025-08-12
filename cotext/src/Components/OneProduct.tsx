@@ -1,12 +1,12 @@
-import React, { useState ,useEffect} from "react";
+import React, { useState, useEffect } from "react";
 import { FaStar } from "react-icons/fa";
-import { Link, useParams ,useNavigate} from 'react-router-dom'
+import { Link, useParams, useNavigate } from 'react-router-dom';
 import axios from "axios";
 
 const ProductCard: React.FC = () => {
   const [quantity, setQuantity] = useState(1);
   const [selectedColor, setSelectedColor] = useState("purple");
-  const { id } = useParams()
+  const { id } = useParams();
   const navigate = useNavigate();
 
   interface Product {
@@ -14,26 +14,24 @@ const ProductCard: React.FC = () => {
     name: string;
     doc: string;
     price: number;  // Changed from 'Number' to 'number'
-    image:string
+    image: string;
   }
-  
+
   interface ApiResponse {
     isSuccess: boolean;
     result: Product[];  // result is an array of Product
   }
 
-  const [products, setProducts] = useState<Product[]>([]); // Initialize as array or null
-const [rating ,setrating]=useState<number>(5)
-// navigate('/Checkout/:id',{state:products})
+  const [products, setProducts] = useState<Product | null>(null); // Initialize with null to handle loading state
+  const [rating, setRating] = useState<number>(5);
 
   useEffect(() => {
-    console.log(id);
   axios
     .get<ApiResponse>(`http://localhost:3000/products/get/${id}`)
     .then((res) => {
       const rawData = res.data.result; // Assuming the result field contains the object
-    setProducts(res.data.result)
-    console.log(products);
+    setProducts(res.data.product)
+    
 
     })
     .catch((err) => {
@@ -43,17 +41,41 @@ const [rating ,setrating]=useState<number>(5)
 
 }, [id]);
 
-useEffect(() => {
-  localStorage.setItem("productQty", quantity.toString());
-}, [quantity]);
-
+  useEffect(() => {
+    if (products) {
+      localStorage.setItem("productQty", quantity.toString());
+    }
+  }, [quantity]);
 
   const handleQuantityChange = (type: "increment" | "decrement") => {
     setQuantity((prev) =>
       type === "increment" ? prev + 1 : prev > 1 ? prev - 1 : 1
-    
     );
   };
+
+  const handleAddToCart = () => {
+    if (products) {
+      // Retrieve the existing cart from localStorage (if it exists), or set an empty array if it doesn't
+      const storedCart = JSON.parse(localStorage.getItem("cart") || "[]");
+  
+      // Check if the product already exists in the cart
+      const productIndex = storedCart.findIndex((item: { id: number }) => item.id === products.id);
+  
+      if (productIndex !== -1) {
+        // If the product already exists in the cart, update its quantity
+        storedCart[productIndex].quantity += quantity;
+      } else {
+        // If the product doesn't exist, add the new product to the cart
+        storedCart.push({ ...products, quantity });
+      }
+  
+      // Set the updated cart back to localStorage without overwriting other cart items
+      localStorage.setItem("cart", JSON.stringify(storedCart));
+  
+      console.log("Updated Cart:", storedCart);
+    }
+  };
+  
 
   return (
     <div className="bg-purple-50 min-h-screen flex justify-center items-center">
@@ -62,7 +84,7 @@ useEffect(() => {
         <div>
           <div className="bg-white rounded-lg p-4 shadow-lg">
             <img
-              src={products.image}
+              src={products?.image}
               alt="Main Product"
               className="w-full rounded-lg"
             />
@@ -83,7 +105,7 @@ useEffect(() => {
         {/* Product Details Section */}
         <div>
           {/* Title and Reviews */}
-          <h1 className="text-3xl font-bold text-gray-800">{products.name}</h1>
+          <h1 className="text-3xl font-bold text-gray-800">{products?.name}</h1>
           <p className="text-gray-600 flex items-center gap-2 mt-2">
             <span className="flex items-center text-yellow-400">
               {[...Array(5)].map((_, i) => (
@@ -100,29 +122,10 @@ useEffect(() => {
 
           {/* Pricing */}
           <div className="mt-4 flex items-center gap-4">
-            <span className="text-2xl font-bold text-pink-600">{products.price}</span>
+            <span className="text-2xl font-bold text-pink-600">${products?.price}</span>
             <span className="text-gray-400 line-through">$50.99</span>
             <span className="text-green-600 font-bold">38% OFF</span>
           </div>
-
-          {/* Colors */}
-          {/* <div className="mt-4">
-            <p className="text-gray-700 font-semibold">Color</p>
-            <div className="flex items-center gap-4 mt-2">
-              {["purple", "pink", "green"].map((color) => (
-                <button
-                  key={color}
-                  onClick={() => setSelectedColor(color)}
-                  className={`w-8 h-8 rounded-full border-2 ${
-                    selectedColor === color
-                      ? "border-purple-500"
-                      : "border-gray-300"
-                  }`}
-                  style={{ backgroundColor: color }}
-                ></button>
-              ))}
-            </div>
-          </div> */}
 
           {/* Quantity Selector */}
           <div className="mt-6">
@@ -144,24 +147,14 @@ useEffect(() => {
             </div>
           </div>
 
-          {/* Buy Button */}
+          {/* Add to Cart Button */}
           <div className="mt-8">
-            <button className="w-full py-3 bg-pink-500 text-white font-bold rounded-full shadow-lg hover:bg-pink-600 transition">
-              Buy Now
-            </button>
-            <p className="mt-2 text-sm text-gray-500">
-              For next-day delivery, order before 14:20.
-            </p>
-          </div>
-
-          {/* Additional Info */}
-          <div className="mt-8 space-y-4">
-            {/* <button className="w-full py-3 bg-gray-200 text-gray-800 font-medium rounded-lg hover:bg-gray-300 transition">
-              Learn More About The Fluff Brush
-            </button> */}
-            <Link to={`/Checkout/${products.id}`}>
-            <button  className="w-full py-3 bg-gray-200 text-gray-800 font-medium rounded-lg hover:bg-gray-300 transition">
-              Shipping Information
+            <Link to={`/checkout/${products?.id}`}>
+            <button
+              onClick={handleAddToCart}
+              className="w-full py-3 bg-gray-800 text-white font-bold rounded-full shadow-lg hover:bg-gray-600 transition"
+            >
+              ADD TO CART
             </button></Link>
           </div>
         </div>

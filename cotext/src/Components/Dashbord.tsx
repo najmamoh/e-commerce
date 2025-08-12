@@ -1,87 +1,90 @@
-import React, { ReactNode } from "react";
-import { Link } from "react-router-dom";
-import { FaBox, FaChartBar, FaUsers } from "react-icons/fa";
-import Kow from './kow'
-type DashboardLayoutProps = {
-  children: ReactNode; // Explicitly define children prop type
-};
+"use client"
 
-const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
-  const data = [
-    { name: "Jan", total: 8000 },
-    { name: "Feb", total: 3000 },
-    { name: "Mar", total: 5000 },
-    { name: "Apr", total: 2500 },
-  ];
+import type React from "react"
+import { useState } from "react"
+import { Link, useLocation } from "react-router-dom"
+import { Button } from "@/components/ui/button"
+import { ScrollArea } from "@/components/ui/scroll-area"
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
+import { cn } from "@/lib/utils"
+import {
+  LayoutDashboard,
+  Package,
+  ShoppingCart,
+  BarChart,
+  Users,
+  Settings,
+  LogOut,
+  Menu,
+  ChevronRight,
+} from "lucide-react"
+
+const Sidebar: React.FC = () => {
+  const [collapsed, setCollapsed] = useState(false)
+  const location = useLocation()
+
+  const routes = [
+    { name: "Dashboard", icon: LayoutDashboard, path: "/admin" },
+    { name: "Products", icon: Package, path: "/admin/products" },
+    { name: "Orders", icon: ShoppingCart, path: "/admin/orders" },
+    { name: "Reports", icon: BarChart, path: "/admin/reports" },
+    { name: "Users", icon: Users, path: "/admin/users" },
+    { name: "Settings", icon: Settings, path: "/admin/settings" },
+    { name: "Logout", icon: LogOut, path: "/logout" },
+  ]
 
   return (
-    <div className="flex bg-gray-100 h-screen">
-      {/* Sidebar */}
-      <div className="w-72 text-gray-800 shadow-md h-screen">
-        <div className="p-6">
-          <h1 className="text-3xl font-bold">Dashboard</h1>
-          <div className="border-b border-stone-800 w-64 mt-6 rounded-xl"></div>
+    <aside
+      className={cn(
+        "fixed top-0 left-0 z-30 h-screen bg-background transition-all duration-300 ease-in-out",
+        collapsed ? "w-20" : "w-72",
+      )}
+    >
+      <div className="flex h-full flex-col bg-slate-200">
+        <div className={cn("flex items-center justify-between p-6", collapsed && "justify-center")}>
+          {!collapsed && <h1 className="text-3xl font-bold">Dashboard</h1>}
+          <Button variant="ghost" size="icon" onClick={() => setCollapsed(!collapsed)} className="h-8 w-8">
+            {collapsed ? <ChevronRight className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
+          </Button>
         </div>
-        <nav className="mt-10 space-y-4">
-          <Link
-            to="/admin"
-            className="flex items-center font-semibold bg-white gap-4 py-3 px-6 text-lg hover:bg-gray-700 hover:text-white rounded-lg transition"
-          >
-            <FaBox className="text-gray-800" />
-            Dashboard
-          </Link>
-          <Link
-            to="/admin/products"
-            className="flex items-center font-semibold gap-4 py-3 px-6 text-lg hover:bg-gray-700 hover:text-white rounded-lg transition"
-          >
-            <FaBox className="text-gray-800" />
-            Products
-          </Link>
-          <Link
-            to="/admin/orders"
-            className="flex items-center font-semibold gap-4 py-3 px-6 text-lg hover:bg-gray-700 hover:text-white rounded-lg transition"
-          >
-            <FaUsers className="text-gray-800" />
-            Orders
-          </Link>
-          <Link
-            to="/admin/reports"
-            className="flex items-center font-semibold gap-4 py-3 px-6 text-lg hover:bg-gray-700 hover:text-white rounded-lg transition"
-          >
-            <FaChartBar className="text-gray-800" />
-            Reports
-          </Link>
-          <Link
-            to="/admin/users"
-            className="flex items-center font-semibold gap-4 py-3 px-6 text-lg hover:bg-gray-700 hover:text-white rounded-lg transition"
-          >
-            <FaUsers className="text-gray-800" />
-            Users
-          </Link>
-          <Link
-            to="/admin/settings"
-            className="flex items-center font-semibold gap-4 py-3 px-6 text-lg hover:bg-gray-700 hover:text-white rounded-lg transition"
-          >
-            <FaUsers className="text-gray-800" />
-            Settings
-          </Link>
-          <Link
-            to="/logout"
-            className="flex items-center font-semibold gap-4 py-3 px-6 text-lg hover:bg-gray-700 hover:text-white rounded-lg transition"
-          >
-            <FaChartBar className="text-gray-800" />
-            Logout
-          </Link>
-        </nav>
+        <ScrollArea className="flex-1 px-3">
+          <nav className="flex flex-col gap-2 py-2">
+            {routes.map((route) => (
+              <TooltipProvider key={route.path} delayDuration={0}>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Link
+                      to={route.path}
+                      className={cn(
+                        "flex items-center gap-3 rounded-lg p-2 text-base font-medium transition-all hover:bg-accent",
+                        location.pathname === route.path
+                          ? "bg-accent text-accent-foreground"
+                          : "text-muted-foreground hover:text-primary",
+                        collapsed && "justify-center",
+                      )}
+                    >
+                      <div
+                        className={cn(
+                          "flex items-center justify-center rounded-full",
+                          collapsed ? "h-12 w-12" : "h-10 w-10",
+                          "bg-primary/10",
+                        )}
+                      >
+                        <route.icon className={cn(collapsed ? "h-6 w-6" : "h-5 w-5")} />
+                      </div>
+                      {!collapsed && <span>{route.name}</span>}
+                    </Link>
+                  </TooltipTrigger>
+                  <TooltipContent side="right">{route.name}</TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            ))}
+          </nav>
+        </ScrollArea>
       </div>
+    </aside>
+  )
+}
 
-      {/* Main Content */}
-      <main className="p-6 bg-slate-100 w-full">
-        {/* <Kow/> */}
-        {children} {/* Render children passed to the layout */}
-      </main>
-    </div>
-  );
-};
+export default Sidebar
 
-export default DashboardLayout;

@@ -42,14 +42,8 @@ export default function FoodCategories() {
     <div className="container mx-auto p-4 px-20 flex flex-col md:flex-row gap-6 " >
       {/* Categories List */}
       <div className="md:w-1/3">
-        <p className="text-5xl lg:text-7xl font-bold mb-6 leading-tight text-gray-900">
+        <p className="text-5xl lg:text-7xl font-bold mb-6 leading-tight text-blue-950">
         "Fresh, custom cakes for every occasion. Make your moments sweeter with us!"
-
-
-
-
-
-
 
 
         </p>

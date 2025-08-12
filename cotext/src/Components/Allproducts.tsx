@@ -1,53 +1,40 @@
-import React, { useState, useEffect } from 'react';
-import { Heart, Eye, ShoppingBag } from 'lucide-react';
-import { Link } from 'react-router-dom';
-import axios from "axios";
+import React, { useEffect, useState } from "react";
+import { useSelector, useDispatch } from "react-redux";
+import { getAllProducts, resetProducts } from "../Redux/Slice/Products/GetProductsSlice";
+import { addToCartAPI ,fetchCart} from "../Redux/Slice/cartt/creatCartslice";
+import { RootState, AppDispatch } from "../Redux/Store";
+import { Heart, Eye, ShoppingBag } from "lucide-react";
+import { Link } from "react-router-dom";
 
 interface Product {
   id: number;
   name: string;
-  doc: string;
-  price: number;  // Changed from 'Number' to 'number'
-  image:string
+  price: number;
+  image: string;
+  doc?: string;
+  rating?: number;
 }
 
-interface ApiResponse {
-  isSuccess: boolean;
-  result: Product[];  // result is an array of Product
-}
+const ProductList: React.FC = () => {
+  const dispatch = useDispatch<AppDispatch>();
+  const [hoveredProduct, setHoveredProduct] = useState<number | null>(null);
 
-const ProductGrid: React.FC = () => {
-const [products, setProducts] = useState<Product[]>([]); // Initialize as array or null
-const [rating ,setrating]=useState<number>(5)
+  const { isLoading, isError, errorMsg, data } = useSelector(
+    (state: RootState) => state.getAllProducts
+  );
+  const { cartItems } = useSelector((state: RootState) => state.cart);
 
   useEffect(() => {
-  axios
-    .get<ApiResponse>('http://localhost:3000/products/get')
-    .then((res) => {
-      const rawData = res.data.result; // Assuming the result field contains the object
-      console.log('Raw API Response:', rawData);
-      
-      if (rawData && typeof rawData === 'object') {
-        // Convert object to array
-        const productsArray = Object.values(rawData);
-        setProducts(productsArray);
-      } else {
-        console.error('Unexpected API response structure:', rawData);
-        setProducts([]); // Set an empty array if the structure is unexpected
-      }
-    })
-    .catch((err) => {
-      console.error('Error fetching products:', err);
-      setProducts([]); // Handle errors by clearing the products
-    });
-}, []);
+    dispatch(getAllProducts());
 
-  const [hoveredProduct, setHoveredProduct] = useState<number | null>(null);
-  const [visibleCount, setVisibleCount] = useState<number>(3); // Initially show 3 products
+    return () => {
+      dispatch(resetProducts());
+      dispatch(fetchCart()); // 👈 This triggers the fetchCart API call
 
-  const showMoreProducts = () => {
-    setVisibleCount((prevCount) => prevCount + 3); // Show 3 more products each time
-  };
+    };
+  }, [dispatch]);
+
+  const productArray: Product[] = Array.isArray(data) ? data : Object.values(data || {});
 
   const renderStars = (rating: number) => {
     return Array(5)
@@ -55,13 +42,7 @@ const [rating ,setrating]=useState<number>(5)
       .map((_, index) => (
         <svg
           key={index}
-          className={`w-5 h-5 ${
-            index < Math.floor(rating)
-              ? 'text-orange-400'
-              : index < rating
-              ? 'text-orange-400'
-              : 'text-gray-300'
-          }`}
+          className={`w-5 h-5 ${index < Math.floor(rating) ? "text-orange-400" : "text-gray-300"}`}
           fill="currentColor"
           viewBox="0 0 20 20"
         >
@@ -70,11 +51,28 @@ const [rating ,setrating]=useState<number>(5)
       ));
   };
 
+  const handleAddToCart = (product: Product) => {
+    const payload = {
+      id: product.id,
+      productId: product.id.toString(), // convert to string if needed
+      name: product.name,
+      price: product.price,
+      image: product.image,
+      quantity: 1 
+
+    };
+    
+    dispatch(addToCartAPI(payload));
+  };
+
+  if (isLoading) return <p className="text-center text-lg py-10">Loading...</p>;
+  if (isError) return <p className="text-center text-red-600">Error: {errorMsg}</p>;
+
   return (
-    <div id='Products' className="container mx-auto p-4 px-20">
-      <h1 className="text-center py-10 font-bold text-5xl">Products</h1>
+    <div id="Products" className="container mx-auto p-4 px-20 ">
+      <h1 className="text-center py-10 font-bold text-5xl text-blue-950">Products</h1>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {products.map((product) => (
+        {productArray.map((product) => (
           <div
             key={product.id}
             className="bg-white rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow duration-300"
@@ -86,79 +84,58 @@ const [rating ,setrating]=useState<number>(5)
                 src={product.image}
                 alt={product.name}
                 className="w-full h-80 object-contain mb-4"
+                loading="lazy"
               />
               <div className="absolute top-2 right-2 space-y-2">
-                <button className="p-2 bg-white rounded-full shadow-md hover:bg-gray-50 transition-colors">
+                <button
+                  className="p-2 bg-white rounded-full shadow-md hover:bg-gray-50 transition-colors"
+                  aria-label="Add to Wishlist"
+                >
                   <Heart
-                    className={`w-5 h-5 ${
-                      hoveredProduct === product.id
-                        ? 'text-red-500'
-                        : 'text-gray-400'
-                    }`}
+                    className={`w-5 h-5 ${hoveredProduct === product.id ? "text-red-500" : "text-gray-400"}`}
                   />
                 </button>
-                <button className="p-2 bg-white rounded-full shadow-md hover:bg-gray-50 transition-colors">
+                <button
+                  className="p-2 bg-white rounded-full shadow-md hover:bg-gray-50 transition-colors"
+                  aria-label="View Details"
+                >
                   <Eye
-                    className={`w-5 h-5 ${
-                      hoveredProduct === product.id
-                        ? 'text-blue-500'
-                        : 'text-gray-400'
-                    }`}
+                    className={`w-5 h-5 ${hoveredProduct === product.id ? "text-blue-500" : "text-gray-400"}`}
                   />
                 </button>
               </div>
             </div>
 
             <div className="space-y-2">
-              <span className="text-green-500 text-sm font-medium">{product.doc}</span>
-
+              {product.doc && <span className=" text-sm font-medium">{product.doc}</span>}
               <div className="flex items-center space-x-1">
-                {renderStars(rating)} 
-              <span className="text-gray-500 text-sm ml-1">({rating})</span>
+                {renderStars(product.rating || 5)}
+                <span className="text-gray-500 text-sm ml-1">({product.rating || 5})</span>
               </div>
-
-              <h3 className="font-medium text-gray-800 hover:text-green-500 transition-colors">
+              <Link
+                to={`/product/${product.id}`}
+                className="font-medium text-gray-800 hover:text-green-500 transition-colors"
+              >
                 {product.name}
-              </h3>
-
+              </Link>
               <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-2">
-                  <span className="text-green-500 text-lg font-semibold">
-                    ${product.price.toFixed(2)}
-                  </span>
-                  <span className="text-gray-400 line-through text-sm">
-                    {/* ${product.originalPrice.toFixed(2)} */}
-                  </span>
-                </div>
-
-                <Link
-                  to={`/product/${product.id}`}
+                <span className="text-green-500 text-lg font-semibold">${product.price}</span>
+                <div
                   className={`p-2 rounded-full transition-colors ${
-                    hoveredProduct === product.id
-                      ? 'bg-green-500 text-white'
-                      : 'bg-gray-100 text-gray-500'
+                    hoveredProduct === product.id ? "bg-green-500 text-white" : "bg-gray-100 text-gray-500"
                   }`}
                 >
-                  <ShoppingBag className="w-5 h-5" />
-                </Link>
+                  <button onClick={() => handleAddToCart(product)} aria-label="Add to Cart">
+                    <ShoppingBag className="w-5 h-5" />
+                  </button>
+                </div>
               </div>
             </div>
           </div>
         ))}
       </div>
-
-      {visibleCount < (products?.length || 0) && (
-        <div className="text-center mt-6">
-          <button
-            onClick={showMoreProducts}
-            className="bg-green-500 text-white px-4 py-2 rounded shadow hover:bg-green-600 transition-colors"
-          >
-            Show More
-          </button>
-        </div>
-      )}
     </div>
   );
 };
 
-export default ProductGrid;
+export default ProductList;
